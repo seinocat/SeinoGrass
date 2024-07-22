@@ -24,11 +24,11 @@ namespace SeinoGrass.Utils
             List<float2> activePoints = new List<float2>();
             
             float2 diagonal = math.abs(corner0 - corner1);
-            float cellsize = radius / SqrtTwo;
-            int width = (int)(diagonal.x / cellsize + 1);
-            int height = (int)(diagonal.y / cellsize + 1);
+            float cellsize = radius / SqrtTwo;//格子大小
+            int cellx = (int)(diagonal.x / cellsize + 1);//x格子数量
+            int celly = (int)(diagonal.y / cellsize + 1);//y格子数量
             
-            float2?[,] grids = new float2?[width, height];
+            float2?[,] grids = new float2?[cellx, celly];
             float2 p0 = new float2(corner0.x + random.NextFloat(diagonal.x), corner0.y + random.NextFloat(diagonal.y));
             AddPoint(ref grids, cellsize, corner0, p0);
             
@@ -44,7 +44,7 @@ namespace SeinoGrass.Utils
                 for (int i = 0; i < k; i++)
                 {
                     float2 new_p = GetRandomPoint(p, radius, ref random);
-                    if (!IsValidPoint(ref grids, cellsize, width, height, radius, corner0, corner1, new_p))
+                    if (!IsValidPoint(ref grids, cellsize, cellx, celly, radius, corner0, corner1, new_p))
                         continue;
                     
                     points.Add(new_p);
@@ -77,18 +77,18 @@ namespace SeinoGrass.Utils
             return new float2(x, y);
         }
 
-        private static bool IsValidPoint(ref float2?[,] grids, float cellsize, int width, int height, float radius, float2 p0, float2 p1, float2 p)
+        private static bool IsValidPoint(ref float2?[,] grids, float cellsize, int cellx, int celly, float radius, float2 p0, float2 p1, float2 p)
         {
             if (p.x < p0.x || p.x >= p1.x || p.y < p0.y || p.y >= p1.y)
                 return false;
             
-            int xindex = (int)((p.x - p0.x) / cellsize);
-            int yindex = (int)((p.y - p0.y) / cellsize);
+            int u = (int)((p.x - p0.x) / cellsize);
+            int v = (int)((p.y - p0.y) / cellsize);
             
-            int i0 = math.max(0, xindex - 2);
-            int i1 = math.min(xindex + 2, width);
-            int j0 = math.max(0, yindex - 2);
-            int j1 = math.min(yindex + 2, height);
+            int i0 = math.max(0, u - 2);
+            int i1 = math.min(u + 2, cellx);
+            int j0 = math.max(0, v - 2);
+            int j1 = math.min(v + 2, celly);
 
             for (int i = i0; i < i1; i++)
                 for (int j = j0; j < j1; j++)
