@@ -345,7 +345,7 @@ MonoBehaviour:
     y: 0
   Corner1:
     x: 10
-    y: 10
+    y: 5
 --- !u!4 &1281516728
 Transform:
   m_ObjectHideFlags: 0
