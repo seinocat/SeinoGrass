@@ -79,7 +79,7 @@ namespace SeinoGrass.Utils
 
         private static bool IsValidPoint(ref float2?[,] grids, float cellsize, int cellx, int celly, float radius, float2 p0, float2 p1, float2 p)
         {
-            if (p.x < p0.x || p.x >= p1.x || p.y < p0.y || p.y >= p1.y)
+            if (p.x - radius * 0.5f <= p0.x || p.x + radius * 0.5f >= p1.x || p.y - radius * 0.5f <= p0.y || p.y + radius * 0.5f >= p1.y)
                 return false;
             
             int u = (int)((p.x - p0.x) / cellsize);
