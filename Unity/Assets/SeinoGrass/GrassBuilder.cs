@@ -4,6 +4,7 @@ using SeinoGrass.Utils;
 using Sirenix.OdinInspector;
 using Unity.Mathematics;
 using UnityEngine;
+using Random = Unity.Mathematics.Random;
 
 namespace SeinoGrass
 {
@@ -15,11 +16,29 @@ namespace SeinoGrass
         public float2 Corner1;
         public VoronoiDiagramsRender VoronoiRender;
 
-        [Button("生成")]
+        [Button("泊松圆盘生成")]
         public void Build()
         {
             Grass.SetActive(false);
             List<float2> points = PoissonDiskSampling.Sample(Corner0, Corner1, Radius);
+            GameObject root = new GameObject("GrassRoot");
+            for (int i = 0; i < points.Count; i++)
+            {
+                float2 point = points[i];
+                var go = Instantiate(Grass, new float3(point.x, 0, point.y), Quaternion.identity);
+                go.SetActive(true);
+                go.transform.SetParent(root.transform);
+            }
+        }
+        
+        [Button("维诺-泊松圆盘生成")]
+        public void VoronoiBuild()
+        {
+            Grass.SetActive(false);
+            Random random = new Random(4712);
+            var Seed = VoronoiRender.SeedPointDatas[random.NextInt(VoronoiRender.SeedPointDatas.Count)];
+            float2 p0 = Corner0 + new float2(Seed.Uv.x * (Corner1.x - Corner0.x), Seed.Uv.y * (Corner1.y - Corner0.y));
+            List<float2> points = VoronoiPoissonSampling.Sample(Corner0, Corner1, p0, Radius, VoronoiRender.VoronoiArray, Seed.Color);
             GameObject root = new GameObject("GrassRoot");
             for (int i = 0; i < points.Count; i++)
             {
