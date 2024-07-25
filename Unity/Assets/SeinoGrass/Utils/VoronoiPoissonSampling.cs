@@ -55,6 +55,7 @@ namespace SeinoGrass.Utils
             SampleSetting setting = new SampleSetting
             {
                 grids = grids,
+                radius = radius,
                 cellsize = cellsize,
                 cellx = cellx,
                 celly = celly,
