@@ -11,24 +11,37 @@ namespace SeinoGrass.Core
 {
     public class VoronoiDiagramsRender : MonoBehaviour
     {
-        [PreviewField]
+#if UNITY_EDITOR
+        [CustomValueDrawer("DrawTexturePreview")]
+#endif
         public Texture2D VoronoiDiagrams;
         public int SeedCount;
         public int2 Size;
         public Material VoronoiMaterial;
         public List<SeedPointData> SeedPointDatas;
+        [NonSerialized]
+        public NativeArray<Color32> VoronoiArray;
 
         private Vector4[] m_SeedArray;
         private Vector4[] m_ColorArray;
-        [NonSerialized]
-        public NativeArray<Color32> VoronoiArray;
+        private Texture2D m_RenderMap;
+
 
         private static readonly int SeedCountProperty = Shader.PropertyToID("_SeedCount");
         private static readonly int SeedArrayProperty = Shader.PropertyToID("_SeedArray");
         private static readonly int ColorArrayProperty = Shader.PropertyToID("_ColorArray");
+        
+        
         Random random = new(9800);
 
         private void Awake()
+        {
+            RandomSeed();
+            Generate();
+        }
+        
+        [Button("重新生成")]
+        public void ReGenerate()
         {
             RandomSeed();
             Generate();
@@ -40,30 +53,32 @@ namespace SeinoGrass.Core
             m_SeedArray = new Vector4[512];
             m_ColorArray = new Vector4[512];
             SeedPointDatas = new List<SeedPointData>();
-            while (count < SeedCount)
+            List<float4> repeatColors = new List<float4>() { float4.zero };
+            
+            while (count < SeedCount) //防止颜色值重复
             {
+                float4 color = float4.zero;
+                while (repeatColors.Contains(color))
+                {
+                    byte r = (byte)random.NextInt(256);
+                    byte g = (byte)random.NextInt(256);
+                    byte b = (byte)random.NextInt(256);
+                    byte a = (byte)random.NextInt(256);
+                    color = new float4(r, g, b, a);
+                }
+                
                 m_SeedArray[count] = new Vector4(random.NextFloat(), random.NextFloat());
-                byte r = (byte)random.NextInt(256);
-                byte g = (byte)random.NextInt(256);
-                byte b = (byte)random.NextInt(256);
-                byte a = (byte)random.NextInt(256);
-                m_ColorArray[count] = new float4(r,g,b,a);
+                m_ColorArray[count] = color;
                 SeedPointDatas.Add(new SeedPointData()
                 {
                     Uv = new float2(m_SeedArray[count].x, m_SeedArray[count].y),
-                    Color = new Color32(r,g,b,a)
+                    Color = new Color32((byte)color.x, (byte)color.y, (byte)color.z, (byte)color.w)
                 });
 
                 count++;
             }
         }
 
-        [Button("重新生成")]
-        public void ReGenerate()
-        {
-            RandomSeed();
-            Generate();
-        }
 
         private void Generate()
         {
@@ -85,7 +100,7 @@ namespace SeinoGrass.Core
             renderMap.Apply();
             RenderTexture.active = null;
 
-            VoronoiDiagrams = renderMap;
+            m_RenderMap = renderMap;
             VoronoiArray = renderMap.GetPixelData<Color32>(0);
 
             for (int i = 0; i < VoronoiArray.Length; i++)
@@ -100,6 +115,21 @@ namespace SeinoGrass.Core
                 }
             }
         }
+
+
+#if UNITY_EDITOR
+        private Texture2D DrawTexturePreview()
+        {
+            Texture2D texture = m_RenderMap;
+            if (texture != null)
+            {
+                Rect rect =  UnityEditor.EditorGUILayout.GetControlRect(false, GUILayout.Height(180));
+                UnityEditor.EditorGUI.DrawPreviewTexture(rect, texture, null, ScaleMode.ScaleToFit, 0, 0);
+            }
+            return texture;
+        }
+#endif
+        
     }
 
 

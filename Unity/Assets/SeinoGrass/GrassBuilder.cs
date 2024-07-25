@@ -36,17 +36,23 @@ namespace SeinoGrass
         public void VoronoiBuild()
         {
             Grass.SetActive(false);
-            var Seed = VoronoiRender.SeedPointDatas[random.NextInt(VoronoiRender.SeedPointDatas.Count)];
-            float2 p0 = Corner0 + new float2(Seed.Uv.x * (Corner1.x - Corner0.x), Seed.Uv.y * (Corner1.y - Corner0.y));
-            List<float2> points = VoronoiPoissonSampling.Sample(Corner0, Corner1, p0, Radius, VoronoiRender.VoronoiArray, Seed.Color);
-            GameObject root = new GameObject("GrassRoot");
-            for (int i = 0; i < points.Count; i++)
+            // var Seed = VoronoiRender.SeedPointDatas[random.NextInt(VoronoiRender.SeedPointDatas.Count)];
+
+            for (int j = 0; j < VoronoiRender.SeedPointDatas.Count; j++)
             {
-                float2 point = points[i];
-                var go = Instantiate(Grass, new float3(point.x, 0, point.y), Quaternion.identity);
-                go.SetActive(true);
-                go.transform.SetParent(root.transform);
+                var Seed = VoronoiRender.SeedPointDatas[j];
+                float2 p0 = Corner0 + new float2(Seed.Uv.x * (Corner1.x - Corner0.x), Seed.Uv.y * (Corner1.y - Corner0.y));
+                List<float2> points = VoronoiPoissonSampling.Sample(Corner0, Corner1, p0, Radius, VoronoiRender.VoronoiArray, Seed.Color);
+                GameObject root = new GameObject("GrassRoot");
+                for (int i = 0; i < points.Count; i++)
+                {
+                    float2 point = points[i];
+                    var go = Instantiate(Grass, new float3(point.x, 0, point.y), Quaternion.identity);
+                    go.SetActive(true);
+                    go.transform.SetParent(root.transform);
+                }
             }
+            
         }
         
         private void OnDrawGizmos()
