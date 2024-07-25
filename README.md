@@ -1,5 +1,6 @@
 # SeinoGrass
-Unity草海渲染
+Unity草海生成方案，使用维诺图划分区域，泊松圆盘采样布点
+![image](https://github.com/seinocat/SeinoGrass/blob/master/Image/VoronoiGrass.png)
 
 算法参考：
 https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
