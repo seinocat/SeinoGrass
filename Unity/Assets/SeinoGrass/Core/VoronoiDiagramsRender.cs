@@ -16,15 +16,17 @@ namespace SeinoGrass.Core
         public int SeedCount;
         public int2 Size;
         public Material VoronoiMaterial;
-        
-        private List<Vector4> m_SeedArray;
-        private List<Vector4> m_ColorArray;
-        private NativeArray<Color32> m_VoronoiArray;
+        public List<SeedPointData> SeedPointDatas;
+
+        private Vector4[] m_SeedArray;
+        private Vector4[] m_ColorArray;
+        [NonSerialized]
+        public NativeArray<Color32> VoronoiArray;
 
         private static readonly int SeedCountProperty = Shader.PropertyToID("_SeedCount");
         private static readonly int SeedArrayProperty = Shader.PropertyToID("_SeedArray");
         private static readonly int ColorArrayProperty = Shader.PropertyToID("_ColorArray");
-        
+        Random random = new(9800);
 
         private void Awake()
         {
@@ -34,14 +36,25 @@ namespace SeinoGrass.Core
         
         private void RandomSeed()
         {
-            Random random = new Random(9800);
-            int count = SeedCount;
-            m_SeedArray = new List<Vector4>();
-            m_ColorArray = new List<Vector4>();
-            while (count-- > 0)
+            int count = 0;
+            m_SeedArray = new Vector4[512];
+            m_ColorArray = new Vector4[512];
+            SeedPointDatas = new List<SeedPointData>();
+            while (count < SeedCount)
             {
-                m_SeedArray.Add(new Vector4(random.NextFloat(), random.NextFloat()));
-                m_ColorArray.Add(new float4(random.NextInt(256), random.NextInt(256), random.NextInt(256), random.NextInt(256)));
+                m_SeedArray[count] = new Vector4(random.NextFloat(), random.NextFloat());
+                byte r = (byte)random.NextInt(256);
+                byte g = (byte)random.NextInt(256);
+                byte b = (byte)random.NextInt(256);
+                byte a = (byte)random.NextInt(256);
+                m_ColorArray[count] = new float4(r,g,b,a);
+                SeedPointDatas.Add(new SeedPointData()
+                {
+                    Uv = new float2(m_SeedArray[count].x, m_SeedArray[count].y),
+                    Color = new Color32(r,g,b,a)
+                });
+
+                count++;
             }
         }
 
@@ -54,7 +67,7 @@ namespace SeinoGrass.Core
 
         private void Generate()
         {
-            m_VoronoiArray = new NativeArray<Color32>(SeedCount, Allocator.Persistent);
+            VoronoiArray = new NativeArray<Color32>(SeedCount, Allocator.Persistent);
             
             VoronoiMaterial.SetInt(SeedCountProperty, SeedCount);
             VoronoiMaterial.SetVectorArray(SeedArrayProperty, m_SeedArray);
@@ -73,7 +86,43 @@ namespace SeinoGrass.Core
             RenderTexture.active = null;
 
             VoronoiDiagrams = renderMap;
-            m_VoronoiArray = renderMap.GetPixelData<Color32>(0);
+            VoronoiArray = renderMap.GetPixelData<Color32>(0);
+
+            for (int i = 0; i < VoronoiArray.Length; i++)
+            {
+                for (int j = 0; j < SeedPointDatas.Count; j++)
+                {
+                    if (SeedPointDatas[j].Color.Equals(VoronoiArray[i]))
+                    {
+                        SeedPointDatas[j].AddAnchor(i, Size);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+
+    public class SeedPointData
+    {
+        public float2 Uv;
+        public Color32 Color;
+        public List<int> Anchors = new ();
+        public int2 ChunkSize;//预估宽高
+        public int2 WidthAnchor;
+        public int2 HeightAnchor;
+
+        public void AddAnchor(int anchor, int2 size)
+        {
+            int2 uv = new int2(anchor % size.x, anchor / size.x);
+            if (uv.x < WidthAnchor.x) WidthAnchor.x = uv.x;
+            if (uv.x > WidthAnchor.y) WidthAnchor.y = uv.x;
+            if (uv.y < HeightAnchor.x) HeightAnchor.x = uv.y;
+            if (uv.y > HeightAnchor.y) HeightAnchor.y = uv.y;
+
+            ChunkSize = new int2(WidthAnchor.y - WidthAnchor.x, HeightAnchor.y - HeightAnchor.x);
+            
+            Anchors.Add(anchor);
         }
     }
 }

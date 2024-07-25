@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using SeinoGrass.Core;
 using SeinoGrass.Utils;
 using Sirenix.OdinInspector;
 using Unity.Mathematics;
@@ -12,6 +13,7 @@ namespace SeinoGrass
         public float Radius = 0.2f;
         public float2 Corner0;
         public float2 Corner1;
+        public VoronoiDiagramsRender VoronoiRender;
 
         [Button("生成")]
         public void Build()
