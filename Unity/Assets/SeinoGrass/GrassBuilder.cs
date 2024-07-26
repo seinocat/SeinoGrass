@@ -17,41 +17,45 @@ namespace SeinoGrass
         public float2 Corner1;
         public VoronoiDiagramsRender VoronoiRender;
         Random random = new Random(4712);
-
+        
+        
         public Mesh RenderMesh;
         public Material GrassMaterial;
+        public ComputeShader ComputeShader;
+        
         private ComputeBuffer m_TRSBuffer;
+        private ComputeBuffer m_VisibleBuffer;
         private static readonly int TRSBufferProperty = Shader.PropertyToID("_TRSBuffer");
+        private static readonly int VisibleBufferProperty = Shader.PropertyToID("_VisibleBuffer");
+        private List<float2> points = new();
+
+        private void Update()
+        {
+            DrawInstance();
+        }
 
         [Button("泊松圆盘生成")]
         public void Build()
         {
             Grass.SetActive(false);
-            List<float2> points = PoissonDiskSampling.Sample(Corner0, Corner1, Radius);
-            pointList.AddRange(points);
+            List<float2> samples = PoissonDiskSampling.Sample(Corner0, Corner1, Radius);
+            points.AddRange(samples);
         }
         
         [Button("维诺-泊松圆盘生成")]
         public void VoronoiBuild()
         {
             Grass.SetActive(false);
-            pointList = new List<float2>();
             for (int j = 0; j < VoronoiRender.SeedPointDatas.Count; j++)
             {
                 var Seed = VoronoiRender.SeedPointDatas[j];
                 float2 p0 = Corner0 + new float2(Seed.Uv.x * (Corner1.x - Corner0.x), Seed.Uv.y * (Corner1.y - Corner0.y));
-                List<float2> points = VoronoiPoissonSampling.Sample(Corner0, Corner1, p0, Radius, VoronoiRender.VoronoiArray, Seed.Color);
-                pointList.AddRange(points);
+                List<float2> samples = VoronoiPoissonSampling.Sample(Corner0, Corner1, p0, Radius, VoronoiRender.VoronoiArray, Seed.Color);
+                points.AddRange(samples);
             }
         }
-
-        private List<float2> pointList = new ();
-        private void Update()
-        {
-            DrawInstance(pointList);
-        }
-
-        private void DrawInstance(List<float2> points)
+        
+        private void DrawInstance()
         {
             int instanceCount = points.Count;
             if (instanceCount == 0)
@@ -77,9 +81,25 @@ namespace SeinoGrass
             m_TRSBuffer?.Release();
             m_TRSBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 16);
             m_TRSBuffer.SetData(trsMatrixs);
+
+            m_VisibleBuffer?.Release();
+            m_VisibleBuffer = new ComputeBuffer(instanceCount, sizeof(uint), ComputeBufferType.Append);
+            
             GrassMaterial.SetBuffer(TRSBufferProperty, m_TRSBuffer);
             
-            Graphics.DrawMeshInstancedIndirect(RenderMesh, 0, GrassMaterial, new Bounds(Vector3.zero, Vector3.one), argsBuff);
+            //视锥剔除
+            Camera mainCamera = Camera.main;
+            ComputeShader.SetBuffer(0, VisibleBufferProperty, m_VisibleBuffer);
+            ComputeShader.SetBuffer(0, TRSBufferProperty, m_TRSBuffer);
+            ComputeShader.SetVector("_BoundMin", new Vector3(-0.5f,0,-0.5f));
+            ComputeShader.SetVector("_BoundMax", new Vector3(0.5f,0.5f,0.5f));
+            ComputeShader.SetMatrix("_VpMatrix", mainCamera.projectionMatrix * mainCamera.worldToCameraMatrix);
+
+            m_VisibleBuffer.SetCounterValue(0);
+            ComputeShader.Dispatch(0, Mathf.CeilToInt(instanceCount/640f), 1, 1);
+            ComputeBuffer.CopyCount(m_VisibleBuffer, argsBuff, sizeof(uint));
+            
+            Graphics.DrawMeshInstancedIndirect(RenderMesh, 0, GrassMaterial, new Bounds(Vector3.zero, Vector3.one * 100), argsBuff);
         }
         
         private void OnDrawGizmos()

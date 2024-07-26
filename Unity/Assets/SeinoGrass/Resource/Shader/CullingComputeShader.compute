@@ -1,9 +1,40 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
+float3 _BoundMin;
+float3 _BoundMax;
+float4x4 _VpMaterix;
+StructuredBuffer<float4x4> _TRSBuffer;
+AppendStructuredBuffer<uint> _VisibleBuffer;
+
+bool IsPointInClipSpace(float4 clipPos)
+{
+   return clipPos.x > -clipPos.w && clipPos.x < clipPos.w&&
+        clipPos.y > -clipPos.w && clipPos.y < clipPos.w&&
+        clipPos.z > 0 && clipPos.z < clipPos.w;
+}
+
 
 [numthreads(640,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-   
+   float4x4 trs = _TRSBuffer[id.x];
+   float4x4 mvp = mul(trs, _VpMaterix);
+   float4 boundPoints[8];
+   boundPoints[0] = mul(mvp, float4(_BoundMin, 1)); //(0,0,0)
+   boundPoints[1] = mul(mvp, float4(_BoundMax, 1)); //(1,1,1)
+   boundPoints[2] = mul(mvp, float4(_BoundMax.x, _BoundMax.y, _BoundMin.z, 1));//(1,1,0)
+   boundPoints[3] = mul(mvp, float4(_BoundMax.x, _BoundMin.y, _BoundMax.z, 1));//(1,0,1)
+   boundPoints[4] = mul(mvp, float4(_BoundMax.x, _BoundMin.y, _BoundMin.z, 1));//(1,0,0)
+   boundPoints[5] = mul(mvp, float4(_BoundMin.x, _BoundMax.y, _BoundMin.z, 1));//(0,1,0)
+   boundPoints[6] = mul(mvp, float4(_BoundMin.x, _BoundMin.y, _BoundMax.z, 1));//(0,0,1)
+   boundPoints[7] = mul(mvp, float4(_BoundMin.x, _BoundMax.y, _BoundMax.z, 1));//(0,1,1)
+
+   for (int i = 0; i < 8; i++)
+   {
+       if (!IsPointInClipSpace(boundPoints[i]))
+            return;
+   }
+    
+   _VisibleBuffer.Append(id.x);
 }

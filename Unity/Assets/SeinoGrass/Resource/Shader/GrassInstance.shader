@@ -2,7 +2,6 @@
 {
 	Properties
 	{
-		_Color("Color", Color) = (1,1,1,1)
 	}
 	SubShader
 	{
@@ -22,10 +21,8 @@
 			#include  "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 			CBUFFER_START(UnityPerMaterial)
-
-			float4 _Color;
 			StructuredBuffer<float4x4> _TRSBuffer;
-			
+			StructuredBuffer<uint> _VisibleBuffer;
 			CBUFFER_END
 
 			struct appdata
@@ -43,9 +40,8 @@
 			v2f vert (appdata v, uint instanceID : SV_InstanceID)
 			{
 				v2f o;
-				float4 worldPos = mul(_TRSBuffer[instanceID], v.vertex);
+				float4 worldPos = mul(_TRSBuffer[_VisibleBuffer[instanceID]], v.vertex);
 				o.vertex = TransformWorldToHClip(worldPos.xyz);
-				// o.vertex = TransformObjectToHClip(v.vertex);
 				o.uv = v.uv;
 				return o;
 			}

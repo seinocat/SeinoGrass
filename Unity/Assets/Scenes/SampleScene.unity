@@ -350,6 +350,7 @@ MonoBehaviour:
   VoronoiRender: {fileID: 1281516729}
   RenderMesh: {fileID: 2836372779368906938, guid: 1fd99d5d9cb16704db30cd9159d4ad6c, type: 3}
   GrassMaterial: {fileID: 2100000, guid: c92479d112cfec046863a8dac0d97b51, type: 2}
+  ComputeShader: {fileID: 7200000, guid: e09406222b4ddec458ea561426eff78f, type: 3}
 --- !u!4 &1281516728
 Transform:
   m_ObjectHideFlags: 0
