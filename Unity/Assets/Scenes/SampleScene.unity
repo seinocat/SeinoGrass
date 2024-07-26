@@ -302,8 +302,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: -0.0772635, y: -0.25103676, z: 0.017313525, w: -0.9647337}
+  m_LocalPosition: {x: 3.3274384, y: 9.823679, z: -22.846233}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -348,6 +348,8 @@ MonoBehaviour:
     x: 50
     y: 50
   VoronoiRender: {fileID: 1281516729}
+  RenderMesh: {fileID: 2836372779368906938, guid: 1fd99d5d9cb16704db30cd9159d4ad6c, type: 3}
+  GrassMaterial: {fileID: 2100000, guid: c92479d112cfec046863a8dac0d97b51, type: 2}
 --- !u!4 &1281516728
 Transform:
   m_ObjectHideFlags: 0
@@ -376,7 +378,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   VoronoiDiagrams: {fileID: 0}
-  SeedCount: 3
+  SeedCount: 20
   Size:
     x: 50
     y: 50

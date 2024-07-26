@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SeinoGrass.Core;
 using SeinoGrass.Utils;
 using Sirenix.OdinInspector;
@@ -17,42 +18,68 @@ namespace SeinoGrass
         public VoronoiDiagramsRender VoronoiRender;
         Random random = new Random(4712);
 
+        public Mesh RenderMesh;
+        public Material GrassMaterial;
+        private ComputeBuffer m_TRSBuffer;
+        private static readonly int TRSBufferProperty = Shader.PropertyToID("_TRSBuffer");
+
         [Button("泊松圆盘生成")]
         public void Build()
         {
             Grass.SetActive(false);
             List<float2> points = PoissonDiskSampling.Sample(Corner0, Corner1, Radius);
-            GameObject root = new GameObject("GrassRoot");
-            for (int i = 0; i < points.Count; i++)
-            {
-                float2 point = points[i];
-                var go = Instantiate(Grass, new float3(point.x, 0, point.y), Quaternion.identity);
-                go.SetActive(true);
-                go.transform.SetParent(root.transform);
-            }
+            pointList.AddRange(points);
         }
         
         [Button("维诺-泊松圆盘生成")]
         public void VoronoiBuild()
         {
             Grass.SetActive(false);
-            // var Seed = VoronoiRender.SeedPointDatas[random.NextInt(VoronoiRender.SeedPointDatas.Count)];
-
+            pointList = new List<float2>();
             for (int j = 0; j < VoronoiRender.SeedPointDatas.Count; j++)
             {
                 var Seed = VoronoiRender.SeedPointDatas[j];
                 float2 p0 = Corner0 + new float2(Seed.Uv.x * (Corner1.x - Corner0.x), Seed.Uv.y * (Corner1.y - Corner0.y));
                 List<float2> points = VoronoiPoissonSampling.Sample(Corner0, Corner1, p0, Radius, VoronoiRender.VoronoiArray, Seed.Color);
-                GameObject root = new GameObject("GrassRoot");
-                for (int i = 0; i < points.Count; i++)
-                {
-                    float2 point = points[i];
-                    var go = Instantiate(Grass, new float3(point.x, 0, point.y), Quaternion.identity);
-                    go.SetActive(true);
-                    go.transform.SetParent(root.transform);
-                }
+                pointList.AddRange(points);
             }
+        }
+
+        private List<float2> pointList = new ();
+        private void Update()
+        {
+            DrawInstance(pointList);
+        }
+
+        private void DrawInstance(List<float2> points)
+        {
+            int instanceCount = points.Count;
+            if (instanceCount == 0)
+                return;
+
+            ComputeBuffer argsBuff = new ComputeBuffer(instanceCount, sizeof(uint) * 5, ComputeBufferType.IndirectArguments);
+            uint[] args = new uint[5];
+            args[0] = RenderMesh.GetIndexCount(0);
+            args[1] = (uint)instanceCount;
+            args[2] = RenderMesh.GetIndexStart(0);
+            args[3] = RenderMesh.GetBaseVertex(0);
+            args[4] = 0;
+            argsBuff.SetData(args);
+
+            List<Matrix4x4> trsMatrixs = new List<Matrix4x4>();
+            //设置坐标
+            for (int i = 0; i < instanceCount; i++)
+            {
+                Vector3 pos = new Vector3(points[i].x, 0, points[i].y);
+                var matrix = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one);
+                trsMatrixs.Add(matrix);
+            }
+            m_TRSBuffer?.Release();
+            m_TRSBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 16);
+            m_TRSBuffer.SetData(trsMatrixs);
+            GrassMaterial.SetBuffer(TRSBufferProperty, m_TRSBuffer);
             
+            Graphics.DrawMeshInstancedIndirect(RenderMesh, 0, GrassMaterial, new Bounds(Vector3.zero, Vector3.one), argsBuff);
         }
         
         private void OnDrawGizmos()

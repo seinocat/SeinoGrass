@@ -13,24 +13,24 @@ namespace SeinoGrass.Core
     {
 #if UNITY_EDITOR
         [CustomValueDrawer("DrawTexturePreview")]
-#endif
         public Texture2D VoronoiDiagrams;
+#endif
+        
         public int SeedCount;
         public int2 Size;
         public Material VoronoiMaterial;
         public List<SeedPointData> SeedPointDatas;
+        
         [NonSerialized]
         public NativeArray<Color32> VoronoiArray;
 
         private Vector4[] m_SeedArray;
         private Vector4[] m_ColorArray;
         private Texture2D m_RenderMap;
-
-
+        
         private static readonly int SeedCountProperty = Shader.PropertyToID("_SeedCount");
         private static readonly int SeedArrayProperty = Shader.PropertyToID("_SeedArray");
         private static readonly int ColorArrayProperty = Shader.PropertyToID("_ColorArray");
-        
         
         Random random = new(9800);
 
