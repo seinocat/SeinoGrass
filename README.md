@@ -1,5 +1,5 @@
 # SeinoGrass
-Unity草海生成方案，使用维诺图划分区域，泊松圆盘采样布点
+Unity区域化草海生成方案，使用维诺图划分区域，泊松圆盘采样布点
 ![image](https://github.com/seinocat/SeinoGrass/blob/master/Image/VoronoiGrass.png)
 
 算法参考：
